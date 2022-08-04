@@ -54,7 +54,7 @@ def my_migration(k,v):
     map1_select=select(map1)
     results=con1.execute(map1_select).fetchall()
     data = [dict(zip(result.keys(), result)) for result in results]
-    #插入
+    #插入数据
     try:
         ins=insert(map2)
         con2.execute(ins,data)
