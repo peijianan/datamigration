@@ -29,7 +29,7 @@ My_Table={
 
 def my_init():
     #连接池初始化
-    for i in range(len(My_Table)+2):
+    for i in range(len(My_Table)+5):
         try:
             c1=engine.connect()
             c2=engine2.connect()
@@ -55,18 +55,24 @@ def my_migration(k,v):
         logging.error(str(dberror))
     map1=Table(k,metadata,autoload=True,autoload_with=engine)
     map2=Table(v,metadata,autoload=True,autoload_with=engine2)
-    map2_delete=delete(map2) #删除目标数据表数据
-    logging.info('删除目标数据库表'+v+'数据'+str(con2.execute(select(map2)).rowcount)+'条！')
-    con2.execute(map2_delete)
+    try:
+        map2_delete=delete(map2) #删除目标数据表数据
+        co=con2.execute(select(map2)).rowcount
+        con2.execute(map2_delete)
+        logging.info('删除目标数据库表'+v+'数据'+str(co)+'条！')
+    except SQLAlchemyError as error:
+        logging.error(str(error))
     #map1_key=map1.columns.keys()
     #map2_key=map2.columns.keys()
-    map1_select=select(map1)
-    results=con1.execute(map1_select).fetchall()
-    data = [dict(zip(result.keys(), result)) for result in results]
+    
     #批量插入数据
     try:
+        map1_select=select(map1)
+        results=con1.execute(map1_select).fetchall()
+        data = [dict(zip(result.keys(), result)) for result in results]
         ins=insert(map2)
         con2.execute(ins,data)
+        con2.execute('commit;')
         logging.info('源数据库表'+k+'到目标数据库表'+v+'更新数据'+str(len(results))+'条！')
     except SQLAlchemyError as error:
         logging.error(str(error))
