@@ -55,6 +55,8 @@ def my_migration(k,v):
         logging.error(str(dberror))
     map1=Table(k,metadata,autoload=True,autoload_with=engine)
     map2=Table(v,metadata,autoload=True,autoload_with=engine2)
+    tran1=con1.begin()
+    tran2=con2.begin()
     try:
         map2_delete=delete(map2) #删除目标数据表数据
         co=con2.execute(select(map2)).rowcount
@@ -76,6 +78,8 @@ def my_migration(k,v):
         logging.info('源数据库表'+k+'到目标数据库表'+v+'更新数据'+str(len(results))+'条！')
     except SQLAlchemyError as error:
         logging.error(str(error))
+        tran1.rollback()
+        tran2.rollback()
 
     con1.close()
     con2.close()
