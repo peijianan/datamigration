@@ -22,23 +22,23 @@ engine2=create_engine('postgresql+psycopg2://postgres:13774529926@localhost:5432
 #数据表映射,源数据库表k：目标数据库表v
 My_Table={
           'tt':'tt_copy2',
-          'test':'test_post',
-          'test':'test_post_copy1'
+          'test':'test_post'
+          
 }
 
 
 def my_init():
     #连接池初始化
-    try:
-        for i in range(len(My_Table)+2):
+    for i in range(len(My_Table)+2):
+        try:
             c1=engine.connect()
             c2=engine2.connect()
             c1.execute('select 1')
             c2.execute('select 1')
             c1.close()
             c2.close()
-    except DBAPIError as dberror:
-        logging.error(str(dberror))
+        except DBAPIError as dberror:
+            logging.error(str(dberror))       
     #日志设置
     logging.basicConfig(format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s',
                     level=logging.DEBUG,
@@ -56,7 +56,7 @@ def my_migration(k,v):
     map1=Table(k,metadata,autoload=True,autoload_with=engine)
     map2=Table(v,metadata,autoload=True,autoload_with=engine2)
     map2_delete=delete(map2) #删除目标数据表数据
-    logging.info('删除目标数据库表'+v+str(con2.execute(select(map2)).rowcount)+'条数据！')
+    logging.info('删除目标数据库表'+v+'数据'+str(con2.execute(select(map2)).rowcount)+'条！')
     con2.execute(map2_delete)
     #map1_key=map1.columns.keys()
     #map2_key=map2.columns.keys()
