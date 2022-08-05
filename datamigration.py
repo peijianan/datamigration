@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine,select,MetaData,Table,insert,delete
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError,DBAPIError
 import logging
 import threading 
 import pymysql
@@ -22,19 +22,23 @@ engine2=create_engine('postgresql+psycopg2://postgres:13774529926@localhost:5432
 #数据表映射,源数据库表k：目标数据库表v
 My_Table={
           'tt':'tt_copy2',
-          'test':'test_post'
+          'test':'test_post',
+          'test':'test_post_copy1'
 }
 
 
 def my_init():
     #连接池初始化
-    for i in range(len(My_Table)+2):
-        c1=engine.connect()
-        c2=engine2.connect()
-        c1.execute('select 1')
-        c2.execute('select 1')
-        c1.close()
-        c2.close()
+    try:
+        for i in range(len(My_Table)+2):
+            c1=engine.connect()
+            c2=engine2.connect()
+            c1.execute('select 1')
+            c2.execute('select 1')
+            c1.close()
+            c2.close()
+    except DBAPIError as dberror:
+        logging.error(str(dberror))
     #日志设置
     logging.basicConfig(format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s',
                     level=logging.DEBUG,
@@ -43,8 +47,12 @@ def my_init():
     logging.getLogger('sqlalchemy.pool').setLevel(logging.INFO)
 
 def my_migration(k,v):
-    con1=engine.connect()
-    con2=engine2.connect()   
+
+    try:
+        con1=engine.connect()
+        con2=engine2.connect()  
+    except DBAPIError as dberror:
+        logging.error(str(dberror))
     map1=Table(k,metadata,autoload=True,autoload_with=engine)
     map2=Table(v,metadata,autoload=True,autoload_with=engine2)
     map2_delete=delete(map2) #删除目标数据表数据
@@ -61,7 +69,7 @@ def my_migration(k,v):
         con2.execute(ins,data)
         logging.info('源数据库表'+k+'到目标数据库表'+v+'更新数据'+str(len(results))+'条！')
     except SQLAlchemyError as error:
-        logging.error(error.orig.message, error.params)
+        logging.error(str(error))
 
     con1.close()
     con2.close()
