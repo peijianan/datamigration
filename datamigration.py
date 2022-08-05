@@ -53,9 +53,9 @@ def my_migration(k,v):
         con2=engine2.connect()  
     except DBAPIError as dberror:
         logging.error(str(dberror))
+    
     map1=Table(k,metadata,autoload=True,autoload_with=engine)
     map2=Table(v,metadata,autoload=True,autoload_with=engine2)
-    tran1=con1.begin()
     tran2=con2.begin()
     try:
         map2_delete=delete(map2) #删除目标数据表数据
@@ -74,11 +74,10 @@ def my_migration(k,v):
         data = [dict(zip(result.keys(), result)) for result in results]
         ins=insert(map2)
         con2.execute(ins,data)
-        con2.execute('commit;')
+        tran2.commit()
         logging.info('源数据库表'+k+'到目标数据库表'+v+'更新数据'+str(len(results))+'条！')
     except SQLAlchemyError as error:
         logging.error(str(error))
-        tran1.rollback()
         tran2.rollback()
 
     con1.close()
@@ -93,7 +92,7 @@ if __name__ == '__main__':
 
     my_init()
 
-    thread_pool = [] #开启多线程
+    thread_pool = [] #线程池
     for key,value in My_Table.items():
         thread_pool.append(threading.Thread(target=my_migration,args=(key,value)))
         #my_migration(key,value)
