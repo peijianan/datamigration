@@ -1,9 +1,11 @@
-from sqlalchemy import create_engine,select,MetaData,Table,insert,delete
+from sqlalchemy import create_engine,select,MetaData,Table,insert,delete,func
 from sqlalchemy.exc import SQLAlchemyError,DBAPIError
+#from sqlalchemy.sql import func
 import logging
 import threading 
 import pymysql
 import psycopg2
+import operator
 metadata=MetaData()
 
 
@@ -76,10 +78,14 @@ def my_migration(k,v):
         con2.execute(ins,data)
         tran2.commit()
         logging.info('源数据库表'+k+'到目标数据库表'+v+'更新数据'+str(len(results))+'条！')
+        results2=con2.execute(select(map2)).fetchall()
     except SQLAlchemyError as error:
         logging.error(str(error))
         tran2.rollback()
-
+    
+    if str(operator.eq(results,results2))=='False':
+        tran2.rollback()
+        
     con1.close()
     con2.close()
 
