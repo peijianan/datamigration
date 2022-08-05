@@ -2,8 +2,8 @@ from sqlalchemy import create_engine,select,MetaData,Table,insert,delete
 from sqlalchemy.exc import SQLAlchemyError
 import logging
 import threading 
-#import pymysql
-#import psycopg2
+import pymysql
+import psycopg2
 metadata=MetaData()
 
 
@@ -28,7 +28,7 @@ My_Table={
 
 def my_init():
     #连接池初始化
-    for i in range(len(My_Table)):
+    for i in range(len(My_Table)+2):
         c1=engine.connect()
         c2=engine2.connect()
         c1.execute('select 1')
@@ -48,6 +48,7 @@ def my_migration(k,v):
     map1=Table(k,metadata,autoload=True,autoload_with=engine)
     map2=Table(v,metadata,autoload=True,autoload_with=engine2)
     map2_delete=delete(map2) #删除目标数据表数据
+    logging.info('删除目标数据库表'+v+str(con2.execute(select(map2)).rowcount)+'条数据！')
     con2.execute(map2_delete)
     #map1_key=map1.columns.keys()
     #map2_key=map2.columns.keys()
