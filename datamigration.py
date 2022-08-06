@@ -84,6 +84,7 @@ def my_migration(k,v):
         tran2.rollback()
     
     if str(operator.eq(results,results2))=='False':
+        logging.error('回滚rollback：数据不一致')
         tran2.rollback()
         
     con1.close()
