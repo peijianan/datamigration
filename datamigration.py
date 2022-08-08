@@ -1,10 +1,9 @@
-from sqlalchemy import create_engine,select,MetaData,Table,insert,delete,func
+from sqlalchemy import create_engine,select,MetaData,Table,insert,delete
 from sqlalchemy.exc import SQLAlchemyError,DBAPIError
 import logging
 import threading 
 import pymysql
 import psycopg2
-import operator
 metadata=MetaData()
 
 
@@ -12,18 +11,18 @@ metadata=MetaData()
 
 
 #源数据库jbdc
-engine=create_engine('mysql+pymysql://root:password@localhost:3306/py',pool_recycle=3600,pool_pre_ping=True,max_overflow=100, pool_size=100)
+engine=create_engine('mysql+pymysql://root:13774529926@localhost:3306/py',pool_recycle=3600,pool_pre_ping=True,max_overflow=100, pool_size=100)
 
 #目标数据库jbdc
-engine2=create_engine('postgresql+psycopg2://postgres:password@localhost:5432/postgres',pool_recycle=3600,pool_pre_ping=True,max_overflow=100, pool_size=100)
+engine2=create_engine('postgresql+psycopg2://postgres:13774529926@localhost:5432/postgres',pool_recycle=3600,pool_pre_ping=True,max_overflow=100, pool_size=100)
 
 
 
 
 #数据表映射,源数据库表k：目标数据库表v
 My_Table={
-          'tt':'tt_copy2',
-          'test':'test_post'
+          'tt':'tt_copy2'
+          
           
 }
 
@@ -71,12 +70,24 @@ def my_migration(k,v):
     #批量插入数据
     try:
         map1_select=select(map1)
-        results=con1.execute(map1_select).fetchall()
-        data = [dict(zip(result.keys(), result)) for result in results]
-        ins=insert(map2)
+        data=[]
+        for results in con1.execute(map1_select):
+            
+            res=dict(zip(results.keys(),results))
+            #print(res)
+            ins=insert(map2)
+            data.append(res)
+            #print(len(data))
+            if len(data)==2000:
+                con2.execute(ins,data)
+                data.clear()
+                logging.info('表'+v+'插入2000条')
+        #results=con1.execute(map1_select).fetchall()
         con2.execute(ins,data)
+        logging.info('表'+v+'插入'+str(len(data))+'条')
+        data.clear()
         tran2.commit()
-        logging.info('源数据库表'+k+'到目标数据库表'+v+'更新数据'+str(len(results))+'条！')
+        
     except SQLAlchemyError as error:
         logging.error(str(error))
         tran2.rollback()
