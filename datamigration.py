@@ -13,10 +13,10 @@ metadata=MetaData()
 
 
 #源数据库jbdc
-engine=create_engine('mysql+pymysql://root:13774529926@localhost:3306/py',pool_recycle=3600,pool_pre_ping=True,max_overflow=100, pool_size=100)
+engine=create_engine('mysql+pymysql://root:password@localhost:3306/py',pool_recycle=3600,pool_pre_ping=True,max_overflow=100, pool_size=100)
 
 #目标数据库jbdc
-engine2=create_engine('postgresql+psycopg2://postgres:13774529926@localhost:5432/postgres',pool_recycle=3600,pool_pre_ping=True,max_overflow=100, pool_size=100)
+engine2=create_engine('postgresql+psycopg2://postgres:password@localhost:5432/postgres',pool_recycle=3600,pool_pre_ping=True,max_overflow=100, pool_size=100)
 
 
 
@@ -56,10 +56,10 @@ def my_migration(k,v):
     except DBAPIError as dberror:
         logging.error(str(dberror))
     
-    map1=Table(k,metadata,autoload=True,autoload_with=engine)
-    map2=Table(v,metadata,autoload=True,autoload_with=engine2)
     tran2=con2.begin()
     try:
+        map1=Table(k,metadata,autoload=True,autoload_with=engine)
+        map2=Table(v,metadata,autoload=True,autoload_with=engine2)
         map2_delete=delete(map2) #删除目标数据表数据
         co=con2.execute(select(map2)).rowcount
         con2.execute(map2_delete)
@@ -78,13 +78,11 @@ def my_migration(k,v):
         con2.execute(ins,data)
         tran2.commit()
         logging.info('源数据库表'+k+'到目标数据库表'+v+'更新数据'+str(len(results))+'条！')
-        results2=con2.execute(select(map2)).fetchall()
     except SQLAlchemyError as error:
         logging.error(str(error))
         tran2.rollback()
     
-    if str(operator.eq(results,results2))=='False':
-        tran2.rollback()
+    
         
     con1.close()
     con2.close()
