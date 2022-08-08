@@ -1,6 +1,5 @@
 from sqlalchemy import create_engine,select,MetaData,Table,insert,delete,func
 from sqlalchemy.exc import SQLAlchemyError,DBAPIError
-#from sqlalchemy.sql import func
 import logging
 import threading 
 import pymysql
@@ -82,8 +81,6 @@ def my_migration(k,v):
         logging.error(str(error))
         tran2.rollback()
     
-    
-        
     con1.close()
     con2.close()
 
